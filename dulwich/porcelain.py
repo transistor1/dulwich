@@ -271,6 +271,12 @@ def print_commit(commit, outstream=sys.stdout):
     outstream.write("\n")
     outstream.write(commit.message + "\n")
     outstream.write("\n")
+    
+def print_commit_format(commit,outstream=sys.stdout,format='{id}: {message} - {author} <{email}>'):
+    author,email = commit.committer.split('<')
+    email = email[:-1]
+    outstream.write(format.format(message=commit.message,author=author,email= email,id=commit.id))
+    outstream.write('\n')
 
 
 def print_tag(tag, outstream=sys.stdout):
@@ -339,17 +345,21 @@ def show_object(repo, obj, outstream):
             }[obj.type_name](repo, obj, outstream)
 
 
-def log(repo=".", outstream=sys.stdout, max_entries=None):
+def log(repo=".", outstream=sys.stdout, max_entries=None, format=None):
     """Write commit logs.
 
     :param repo: Path to repository
     :param outstream: Stream to write log output to
     :param max_entries: Optional maximum number of entries to display
+    :param format: Optional string to format entries. {message}, {author}, {email}
     """
     r = open_repo(repo)
     walker = r.get_walker(max_entries=max_entries)
     for entry in walker:
-        print_commit(entry.commit, outstream)
+        if format:
+            print_commit_format(entry.commit,outstream,format)
+        else:
+            print_commit(entry.commit, outstream)
 
 
 def show(repo=".", objects=None, outstream=sys.stdout):
