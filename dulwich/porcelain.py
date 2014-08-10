@@ -256,26 +256,25 @@ def rm(repo=".", paths=None):
     index.write()
 
 
-def print_commit(commit, outstream=sys.stdout):
+def print_commit(commit, outstream=sys.stdout,format=None):
     """Write a human-readable commit log entry.
 
     :param commit: A `Commit` object
     :param outstream: A stream file to write to
     """
-    outstream.write("-" * 50 + "\n")
-    outstream.write("commit: %s\n" % commit.id)
-    if len(commit.parents) > 1:
-        outstream.write("merge: %s\n" % "...".join(commit.parents[1:]))
-    outstream.write("author: %s\n" % commit.author)
-    outstream.write("committer: %s\n" % commit.committer)
-    outstream.write("\n")
-    outstream.write(commit.message + "\n")
-    outstream.write("\n")
-    
-def print_commit_format(commit,outstream=sys.stdout,format='{id}: {message} - {author} <{email}>'):
-    author,email = commit.committer.split('<')
-    email = email[:-1]
-    outstream.write(format.format(message=commit.message,author=author,email= email,id=commit.id))
+    if not format:
+        format = '-' * 50 + '\n' + 'commit: {commit}\n' + 'merge: {merge}\n' + 'author: {author} <{author_email}>\n' + 'committer: {committer} <{committer_email}>\n\n' + '{message}\n'
+    author,author_email = commit.author.split('<')
+    author_email = author_email[:-1]
+    committer,committer_email = commit.committer.split('<')
+    committer_email = committer_email[:-1]
+    outstream.write(format.format(message=commit.message,
+                                  author=author,
+                                  author_email= author_email,
+                                  committer=committer,
+                                  committer_email=committer_email,
+                                  merge='...'.join(commit.parents[1:]),
+                                  commit=commit.id))
     outstream.write('\n')
 
 
@@ -351,15 +350,13 @@ def log(repo=".", outstream=sys.stdout, max_entries=None, format=None):
     :param repo: Path to repository
     :param outstream: Stream to write log output to
     :param max_entries: Optional maximum number of entries to display
-    :param format: Optional string to format entries. {message}, {author}, {email}
+    :param format: Optional string to format entries:
+         {message}, {author}, {author_email}, {committer}, {committer_email}, {merge}, {commit}
     """
     r = open_repo(repo)
     walker = r.get_walker(max_entries=max_entries)
     for entry in walker:
-        if format:
-            print_commit_format(entry.commit,outstream,format)
-        else:
-            print_commit(entry.commit, outstream)
+            print_commit(entry.commit,outstream,format)
 
 
 def show(repo=".", objects=None, outstream=sys.stdout):
